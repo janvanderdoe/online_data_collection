@@ -1,1 +1,3 @@
-listings_indeed.csv
+*.csv
+.Rhistory
+.gitignore
