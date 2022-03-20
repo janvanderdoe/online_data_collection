@@ -58,8 +58,8 @@ counting$enrollments <- courses %>%
   group_by(Category) %>%
   summarize(sum(na.omit(Enrollments)))
 
-counting$relativity = counting$enrollments$`sum(na.omit(Enrollments))`/counting$count
-ggplot(counting, aes(x = Category, y = relativity)) +
+counting$average = counting$enrollments$`sum(na.omit(Enrollments))`/counting$count
+ggplot(counting, aes(x = Category, y = average)) +
   geom_col() + ggtitle("enrollments per category")
 
 #reviews
@@ -70,26 +70,29 @@ ggplot(courses, aes(x = Star_rating, y = Enrollments)) +
 #normalize ratings with bayesian estimator
 R= median(na.omit(courses$Star_rating))
 W = courses$Review_count / 10
-courses$normalized_ratings = (R * W + courses$Review_count*courses$Star_rating) / (W+courses$Review_count)
+courses$normalized_ratings = as.numeric(format(round((R * W + courses$Review_count*courses$Star_rating) / (W+courses$Review_count),2),nsmall=2))
 
-#check why bars arent plotted 
+#normalized rating vs enrollments
 ggplot(courses, aes(x = normalized_ratings, y = Enrollments)) +
   geom_col() + ggtitle("normalized Rating vs. number of enrollments")
 
 
-#free courses and 100% online - check zero value for - check geom_wrap()
+#free courses and 100% online
 counts <- table(courses$X100_online, courses$Free)
 barplot(counts, main="Interest in free online courses",
         xlab="Is the course free?", col=c("darkblue","red"),
-        legend = c("online", "not online"), beside=TRUE)
+        legend =  c("no", "yes"), args.legend=list(title="online?"), beside=TRUE)
 
-
-#most popular universities
+#Top 10 universities offering courses
+courses %>% 
+     group_by(Name_school) %>%
+     summarize(count=n()) %>% arrange(desc(count))
 
 courses %>% 
-  +     group_by(Name_school) %>%
-  +     summarize(count=n()) %>% arrange(desc(count))
+       group_by(Name_school) %>%
+       summarize(count=n())
 
-courses %>% 
-  +     group_by(Name_school) %>%
-  +     summarize(count=n())
+#average rating per university
+uni_ratings <- data.frame(university = courses$Name_school, ratings = courses$normalized_ratings)
+setDT(uni_ratings)
+uni_ratings[ ,list(mean=mean(ratings)), by = university]
