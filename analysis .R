@@ -14,30 +14,64 @@ library(dplyr)
 library(ggplot2)
 library(tidyverse)
 library(scales)
+setwd("/Users/saadanwar/Documents/uvt/online data collection and mgmt/futurelearn_web_scraper")
 courses <- read.csv("futurelearn_data.csv", sep = ";")
 
-sum(courses$Enrollments =="") #how many are empty
-position_of_blanks <-which(courses$Enrollments=="", arr.ind=TRUE) # Specify which are empty
+#check if the same url is scraped more than once
+sum(duplicated(courses$Url))
 
-courses$Enrollments <-as.numeric(gsub("\\D", "",courses$Enrollments)) #replace string by only the number of educators
+#how many Enrollments have no value
+sum(courses$Enrollments =="") 
+# Specify which are empty
+position_of_blanks <-which(courses$Enrollments=="", arr.ind=TRUE) 
 
-sum(is.na(courses$Enrollments)) #how many are NA
-position_of_NAs <-which(is.na(courses$Enrollments), arr.ind=TRUE) # Specify which are NA
+#replace string by only the number of educators
+courses$Enrollments <-as.numeric(gsub("\\D", "",courses$Enrollments)) 
+
+#how many Enrollments have become NA 
+sum(is.na(courses$Enrollments))
+# Specify which are NA
+position_of_NAs <-which(is.na(courses$Enrollments), arr.ind=TRUE) 
 #Na increases because some enrollments only say: "Educators are currently active on this course" , without specifying the number of educators
 
+#check how many courses have no reviews
 sum(courses$Review_count =="")
+#replace string by only the number of reviews
 courses$Review_count <- as.numeric(gsub("\\D", "",courses$Review_count))
+#check how courses became NA
 sum(is.na(courses$Review_count))
 
+#replace string by only the duration
 courses$Duration <- as.numeric(gsub("\\D", "",courses$Duration))
+#add `in weeks` to the header
 colnames(courses)[11] <- "Duration in weeks"
 
+#replace string by only the number of study hours per week
 courses$Weekly_study <- as.numeric(gsub("\\D", "",courses$Weekly_study))
+#add `in hours` to the header
 colnames(courses)[12] <- "Weekly_study in hours"
 
-#make txt file for tableau
-write.table(courses, file = "courses.txt", sep = "\t",
-            row.names = FALSE, col.names = TRUE)
+#change the variable time from string type to timestamp
+courses$Time =as.POSIXct(courses$Time)
+
+summary(courses)
+
+
+#number of categories
+courses %>% group_by(Category) %>% summarize(count=n())
+
+#number of different universiteis
+length(unique(courses$Name_school))
+
+#number of courses per university
+courses %>% group_by(Name_school, ) %>% summarize(count=n())
+
+
+#Top 10 universities offering courses
+courses %>% 
+  group_by(Name_school) %>%
+  summarize(count=n()) %>% arrange(desc(count))
+
 
 
 #most offered category
@@ -82,15 +116,6 @@ counts <- table(courses$X100_online, courses$Free)
 barplot(counts, main="Interest in free online courses",
         xlab="Is the course free?", col=c("darkblue","red"),
         legend =  c("no", "yes"), args.legend=list(title="online?"), beside=TRUE)
-
-#Top 10 universities offering courses
-courses %>% 
-     group_by(Name_school) %>%
-     summarize(count=n()) %>% arrange(desc(count))
-
-courses %>% 
-       group_by(Name_school) %>%
-       summarize(count=n())
 
 #average rating per university
 uni_ratings <- data.frame(university = courses$Name_school, ratings = courses$normalized_ratings)
