@@ -14,8 +14,10 @@ library(dplyr)
 library(ggplot2)
 library(tidyverse)
 library(scales)
-setwd("/Users/saadanwar/Documents/uvt/online data collection and mgmt/futurelearn_web_scraper")
-courses <- read.csv("futurelearn_data.csv", sep = ";")
+library(data.table)
+library(ggpubr)
+
+courses <- read.csv("gen/output/futurelearn_data.csv", sep = ";")
 
 #check if the same url is scraped more than once
 sum(duplicated(courses$Url))
@@ -44,12 +46,12 @@ sum(is.na(courses$Review_count))
 #replace string by only the duration
 courses$Duration <- as.numeric(gsub("\\D", "",courses$Duration))
 #add `in weeks` to the header
-colnames(courses)[11] <- "Duration in weeks"
+colnames(courses)[11] <- "Duration_in_weeks"
 
 #replace string by only the number of study hours per week
 courses$Weekly_study <- as.numeric(gsub("\\D", "",courses$Weekly_study))
 #add `in hours` to the header
-colnames(courses)[12] <- "Weekly_study in hours"
+colnames(courses)[12] <- "Weekly_study_in_hours"
 
 #change the variable time from string type to timestamp
 courses$Time =as.POSIXct(courses$Time)
@@ -76,12 +78,14 @@ courses %>%
 
 #most offered category
 ggplot(courses, aes(x = Category)) +
-  geom_histogram(stat = 'count') + ggtitle("most offered category")
+  geom_histogram(stat = 'count') + ggtitle("most offered category") +
+  theme(axis.text.x = element_text(angle = 45, hjust=1))
 
 #enrollments per category
 #show star rating and number of enrollments
 ggplot(courses, aes(x = Category, y = Enrollments)) +
-  geom_col() + ggtitle("enrollments per category")
+  geom_col() + ggtitle("enrollments per category") +
+  theme(axis.text.x = element_text(angle = 45, hjust=1))
 
 #relative enrollments per category
 counting <- courses %>% 
@@ -121,3 +125,31 @@ barplot(counts, main="Interest in free online courses",
 uni_ratings <- data.frame(university = courses$Name_school, ratings = courses$normalized_ratings)
 setDT(uni_ratings)
 uni_ratings[ ,list(mean=mean(ratings)), by = university]
+
+#Comparing the means of enrollments of courses that can be accessed with an unlimited subscription
+courses %>% ggboxplot(x = "Unlimited", y = "Enrollments",
+                      ggtheme = theme_minimal()) +
+  yscale(.scale = "log10") +
+  stat_compare_means(method = "t.test")
+
+#Comparing the menas of enrollments of courses that have accreditation
+courses %>% ggboxplot(x = "Accreditation", y = "Enrollments",
+                      ggtheme = theme_minimal()) +
+  yscale(.scale = "log10") +
+  stat_compare_means(method = "t.test")
+
+#Comparing the means of enrollments of courses that have accreditation
+courses %>% ggboxplot(x = "Endorsed", y = "Enrollments",
+                      ggtheme = theme_minimal()) +
+  yscale(.scale = "log10") +
+  stat_compare_means(method = "t.test")
+
+#Comparing the duration in weeks of courses which belong en do not belong to expert tracks
+courses %>% ggboxplot(x = "Part_of_Expert", y = "Duration_in_weeks",
+                      ggtheme = theme_minimal()) +
+  stat_compare_means(method = "t.test")
+
+#Comparing the weekly study time of courses which belong en do not belong to expert tracks
+courses %>% ggboxplot(x = "Part_of_Expert", y = "Weekly_study_in_hours",
+                      ggtheme = theme_minimal()) +
+  stat_compare_means(method = "t.test")
