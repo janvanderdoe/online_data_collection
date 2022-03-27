@@ -1,10 +1,3 @@
-packages <- c("reshape2", "rmarkdown",
-              "data.table", "Hmisc", "dplr",
-              "stargazer", "knitr",
-              "xtable","tidyverse",
-              "RSQLite", "dbplyr", "haven","readxl","effectsize", "writexl", "scales")
-install.packages(packages)
-R --version
 library(effectsize)
 library(readxl)
 library(haven)
@@ -17,7 +10,7 @@ library(scales)
 library(data.table)
 library(ggpubr)
 
-courses <- read.csv("gen/output/futurelearn_data.csv", sep = ";")
+courses <- read.csv("../../gen/output/futurelearn_data.csv", sep = ";")
 
 #check if the same url is scraped more than once
 sum(duplicated(courses$Url))
@@ -118,7 +111,7 @@ ggplot(courses, aes(x = normalized_ratings, y = Enrollments)) +
 #free courses and 100% online
 counts <- table(courses$X100_online, courses$Free)
 barplot(counts, main="Interest in free online courses",
-        xlab="Is the course free?", col=c("darkblue","red"),
+        xlab="Is the course free?", ylab = "Number of courses", col=c("darkblue","red"),
         legend =  c("no", "yes"), args.legend=list(title="online?"), beside=TRUE)
 
 #average rating per university
@@ -153,3 +146,5 @@ courses %>% ggboxplot(x = "Part_of_Expert", y = "Duration_in_weeks",
 courses %>% ggboxplot(x = "Part_of_Expert", y = "Weekly_study_in_hours",
                       ggtheme = theme_minimal()) +
   stat_compare_means(method = "t.test")
+
+write.csv(courses, "../../gen/output/futurelearn_data_clean.csv")
